@@ -23,21 +23,44 @@ const CartContext = createContext<CartContextData>({} as CartContextData);
 
 export function CartProvider({ children }: CartProviderProps): JSX.Element {
   const [cart, setCart] = useState<Product[]>(() => {
-    // const storagedCart = Buscar dados do localStorage
+    const storagedCart = localStorage.getItem('@RocketShoes:cart');
 
-    // if (storagedCart) {
-    //   return JSON.parse(storagedCart);
-    // }
+    if (storagedCart) {
+      return JSON.parse(storagedCart);
+    }
 
     return [];
   });
 
   const addProduct = async (productId: number) => {
-    try {
-      // TODO
-    } catch {
-      // TODO
+    let cartCopy = cart;
+    const productIndex = cartCopy.findIndex(product => product.id === productId);
+
+    if (cartCopy[productIndex]) {
+      cartCopy[productIndex].amount += 1;
+      setCart(cartCopy);
+    } else {
+      // api.get(`stock/${productId}`).then(response => setProductAmount(response.data.amount));
+      api.get<Product>(`products/${productId}`).then((response) => {
+        const newProduct = {
+          id: productId,
+          title: response.data.title,
+          price: response.data.price,
+          image: response.data.image,
+          amount: 1,
+        }
+        cartCopy.push(newProduct);
+        setCart(cartCopy);
+      });
     }
+    console.log(cart);
+    localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart));
+    // localStorage.setItem('@RocketShoes:cart', JSON.stringify([]));
+    // try {
+    //   // TODO
+    // } catch {
+    //   // TODO
+    // }
   };
 
   const removeProduct = (productId: number) => {
