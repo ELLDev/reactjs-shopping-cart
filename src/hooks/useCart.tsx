@@ -37,8 +37,11 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     const productIndex = cartCopy.findIndex(product => product.id === productId);
 
     if (cartCopy[productIndex]) {
+      console.log("repeat");
       cartCopy[productIndex].amount += 1;
       setCart(cartCopy);
+      localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart));
+      // localStorage.setItem('@RocketShoes:cart', JSON.stringify([]));
     } else {
       // api.get(`stock/${productId}`).then(response => setProductAmount(response.data.amount));
       api.get<Product>(`products/${productId}`).then((response) => {
@@ -51,11 +54,10 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
         }
         cartCopy.push(newProduct);
         setCart(cartCopy);
+        localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart));
+        console.log(cart);
       });
     }
-    console.log(cart);
-    localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart));
-    // localStorage.setItem('@RocketShoes:cart', JSON.stringify([]));
     // try {
     //   // TODO
     // } catch {
@@ -64,22 +66,29 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
   };
 
   const removeProduct = (productId: number) => {
-    try {
-      // TODO
-    } catch {
-      // TODO
-    }
+
+    // try {
+    //   // TODO
+    // } catch {
+    //   // TODO
+    // }
   };
 
   const updateProductAmount = async ({
     productId,
     amount,
   }: UpdateProductAmount) => {
-    try {
-      // TODO
-    } catch {
-      // TODO
-    }
+    let cartCopy = cart;
+    const productIndex = cartCopy.findIndex(product => product.id === productId);
+    cartCopy[productIndex].amount += amount;
+    setCart(cartCopy);
+    // localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart));
+    console.log(cart);
+    // try {
+    //   // TODO
+    // } catch {
+    //   // TODO
+    // }
   };
 
   return (
