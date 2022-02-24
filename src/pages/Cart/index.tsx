@@ -66,7 +66,7 @@ const Cart = (): JSX.Element => {
       <button
         type="button"
         data-testid="remove-product"
-      // onClick={() => handleRemoveProduct(product.id)}
+        onClick={() => handleRemoveProduct(product.id)}
       >
         <MdDelete size={20} />
       </button>
@@ -89,7 +89,6 @@ const Cart = (): JSX.Element => {
 
     updateProductAmount({productId, amount});
     computeTotal();
-    console.log(total);
   }
 
   function handleProductDecrement(product: Product) {
@@ -98,10 +97,10 @@ const Cart = (): JSX.Element => {
 
     updateProductAmount({productId, amount});
     computeTotal();
-    console.log(total);
   }
 
   function handleRemoveProduct(productId: number) {
+    removeProduct(productId);
   }
 
   return (
