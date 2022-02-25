@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useState } from 'react';
+import { createContext, ReactNode, useContext, useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { convertToObject } from 'typescript';
 import { api } from '../services/api';
@@ -23,8 +23,7 @@ interface CartContextData {
 const CartContext = createContext<CartContextData>({} as CartContextData);
 
 export function CartProvider({ children }: CartProviderProps): JSX.Element {
-  const [canAddToCart, setCanAddToCart] = useState(true);
-  const [productAmountInStock, setProductAmountInStock] = useState(0);
+  const [productsInStock, setProductsInStock] = useState<Stock[]>([]);
   const [cart, setCart] = useState<Product[]>(() => {
     const storagedCart = localStorage.getItem('@RocketShoes:cart');
 
@@ -33,6 +32,10 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     }
 
     return [];
+  });
+
+  useEffect(() => {
+    api.get<Stock[]>(`stock`).then(response => setProductsInStock(response.data));
   });
 
   const addProduct = async (productId: number) => {
@@ -82,31 +85,17 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
   }: UpdateProductAmount) => {
     try {
       let cartCopy = cart;
-      const productIndex = cartCopy.findIndex(product => product.id === productId);
-      setCanAddToCart(true);
-
-      // console.log(canAddToCart,'before api');
-      api.get(`stock/${productId}`).then(response => setProductAmountInStock(response.data.amount));
-
-      // api.get(`stock/${productId}`).then(response => {
-      //   if (cartCopy[productIndex].amount + amount > response.data.amount) {
-      //     // console.log("nai");          
-      //     setCanAddToCart(false);
-      //     console.log(canAddToCart,'in api');
-      //   }
-      // });
-      // console.log(canAddToCart,'outside api');
-      if (cartCopy[productIndex].amount + amount > productAmountInStock) {
-        cartCopy[productIndex].amount += amount;
+      const cartProductIndex = cartCopy.findIndex(product => product.id === productId);
+      const stockProductIndex = productsInStock.findIndex(product => product.id === productId);
+          
+      if (cartCopy[cartProductIndex].amount + amount <= productsInStock[stockProductIndex].amount) {
+        cartCopy[cartProductIndex].amount += amount;
         setCart(cartCopy);
         localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart));
       } else {
-        // console.log(amount);
-        // console.log(cartCopy[productIndex].amount + amount);
         throw Error;
       }
     } catch {
-      setCanAddToCart(true);
       toast.error('Quantidade solicitada fora de estoque');
     }
   };
