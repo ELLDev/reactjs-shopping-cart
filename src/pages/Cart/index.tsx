@@ -22,7 +22,7 @@ const Cart = (): JSX.Element => {
   const [total, setTotal] = useState('');
   
   useEffect(() => {
-    computeTotal();
+    computeTotal();    
   });
 
   const cartFormatted = cart.map(product => (
