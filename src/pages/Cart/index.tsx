@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import {
   MdDelete,
   MdAddCircleOutline,
@@ -19,12 +18,12 @@ interface Product {
 
 const Cart = (): JSX.Element => {
   const { cart, removeProduct, updateProductAmount } = useCart();
-  const [total, setTotal] = useState('');
+  const total = formatPrice(
+    cart.reduce((sumTotal, product) => {
+      sumTotal += product.price * product.amount;
+      return sumTotal;
+    }, 0));
   
-  useEffect(() => {
-    computeTotal();    
-  });
-
   const cartFormatted = cart.map(product => (
     <tr key={product.id} data-testid="product">
     <td>
@@ -74,29 +73,18 @@ const Cart = (): JSX.Element => {
   </tr>
   ));
 
-  function computeTotal() {
-    setTotal(formatPrice(
-      cart.reduce((sumTotal, product) => {
-        sumTotal += product.price * product.amount;
-        return sumTotal;
-      }, 0)
-    ));
-  }
-
   function handleProductIncrement(product: Product) {
     const productId = product.id;
-    const amount = 1;
-
+    const amount = product.amount + 1;
+    
     updateProductAmount({productId, amount});
-    computeTotal();
   }
 
   function handleProductDecrement(product: Product) {
     const productId = product.id;
-    const amount = -1;
+    const amount = product.amount - 1;
 
     updateProductAmount({productId, amount});
-    computeTotal();
   }
 
   function handleRemoveProduct(productId: number) {

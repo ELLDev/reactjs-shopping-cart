@@ -1,9 +1,7 @@
-import { createContext, ReactNode, useContext, useState, useEffect } from 'react';
+import { createContext, ReactNode, useContext, useState } from 'react';
 import { toast } from 'react-toastify';
-import { validateLocaleAndSetLanguage } from 'typescript';
-// import { convertToObject } from 'typescript';
 import { api } from '../services/api';
-import { Product, Stock } from '../types';
+import { Product } from '../types';
 
 interface CartProviderProps {
   children: ReactNode;
@@ -24,8 +22,6 @@ interface CartContextData {
 const CartContext = createContext<CartContextData>({} as CartContextData);
 
 export function CartProvider({ children }: CartProviderProps): JSX.Element {
-  const [productsInStock, setProductsInStock] = useState<Stock[]>([]);
-  const [productsCatalog, setProductsCatalog] = useState<Product[]>([]);
   const [cart, setCart] = useState<Product[]>(() => {
     const storagedCart = localStorage.getItem('@RocketShoes:cart');
 
@@ -36,32 +32,29 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     return [];
   });
 
-  useEffect(() => {
-    api.get<Stock[]>(`stock`).then(response => setProductsInStock(response.data));
-    api.get<Product[]>(`products`).then(response => setProductsCatalog(response.data));
-  },[]);
-
   const addProduct = async (productId: number) => {
     try {
-      let cartCopy = cart;
+      let cartCopy = [...cart];
       const cartProductIndex = cartCopy.findIndex(product => product.id === productId);
-      const stockProductIndex = productsInStock.findIndex(product => product.id === productId);
-  
+      const product = await api.get(`products/${productId}`);
+
       if (cartCopy[cartProductIndex]) {
-        if (cartCopy[cartProductIndex].amount + 1 <= productsInStock[stockProductIndex].amount) {
+        const stock = await api.get(`stock/${productId}`);
+
+        if (cartCopy[cartProductIndex].amount < stock.data.amount) {
           cartCopy[cartProductIndex].amount += 1;
           setCart(cartCopy);
           localStorage.setItem('@RocketShoes:cart', JSON.stringify(cartCopy));
         } else {
           toast.error('Quantidade solicitada fora de estoque');
+          return;
         }
       } else {
-        const productCatalogIndex = productsCatalog.findIndex(product => product.id === productId);
         const newProduct = {
-          id: productsCatalog[productCatalogIndex].id,
-          title: productsCatalog[productCatalogIndex].title,
-          price: productsCatalog[productCatalogIndex].price,
-          image: productsCatalog[productCatalogIndex].image,
+          id: product.data.id,
+          title: product.data.title,
+          price: product.data.price,
+          image: product.data.image,
           amount: 1,
         }
         cartCopy.push(newProduct);
@@ -75,14 +68,15 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
   const removeProduct = (productId: number) => {
     try {
-      if (cart.length === 1) {
-        setCart([]);
-        localStorage.setItem('@RocketShoes:cart', '');
-      } else {
-        let cartCopy = cart;
+      let cartCopy = [...cart];      
+      const productIndex = cartCopy.findIndex(product => product.id === productId);
+
+      if (productIndex >= 0) {
         cartCopy = cartCopy.filter(product => product.id !== productId);
         setCart(cartCopy);
         localStorage.setItem('@RocketShoes:cart', JSON.stringify(cartCopy));
+      } else {
+        throw Error();
       }
     } catch {
         toast.error('Erro na remoção do produto');
@@ -94,20 +88,21 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     amount,
   }: UpdateProductAmount) => {
     try {     
-      let cartCopy = cart;
+      let cartCopy = [...cart];
+      const stock = await api.get(`stock/${productId}`);
       const cartProductIndex = cartCopy.findIndex(product => product.id === productId);
-      const stockProductIndex = productsInStock.findIndex(product => product.id === productId);
-      
-      if (cartCopy[cartProductIndex].amount + amount <= 0 || amount === 0) {
-        throw Error;
+
+      if (amount <= 0) {
+        return;
+      }
+
+      if (amount <= stock.data.amount) {
+        cartCopy[cartProductIndex].amount = amount; 
+        setCart(cartCopy);
+        localStorage.setItem('@RocketShoes:cart', JSON.stringify(cartCopy));
       } else {
-        if (cartCopy[cartProductIndex].amount + amount <= productsInStock[stockProductIndex].amount) {
-          cartCopy[cartProductIndex].amount += amount; 
-          setCart(cartCopy);
-          localStorage.setItem('@RocketShoes:cart', JSON.stringify(cartCopy));
-        } else {
-          toast.error('Quantidade solicitada fora de estoque');
-        }
+        toast.error('Quantidade solicitada fora de estoque');
+        return;
       }
     } catch {
       toast.error('Erro na alteração de quantidade do produto');

@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MdShoppingBasket } from 'react-icons/md';
 
@@ -9,11 +8,6 @@ import { useCart } from '../../hooks/useCart';
 const Header = (): JSX.Element => {
   const { cart } = useCart();
   let cartSize = cart.length;
-  // const [refresh, refreshComponent] = useState({});
-
-  // useEffect(() => {
-  //   refreshComponent({});
-  // }, [refresh]);
 
   return (
     <Container>
